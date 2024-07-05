@@ -1,3 +1,4 @@
+from threading import Thread
 from subprocess import Popen
 import re
 import os, fnmatch
@@ -42,22 +43,17 @@ class DownloadWindow(GridLayout):
     @mainthread
     def update(self,value):
         if self.downloading:
-            print("update")
             pb = self.progressbar
             val = pb.value
             if val > 99:
                 pb.value = 0
             else:
                 pb.value += 10
-            self.timer = Clock.schedule_once(self.update, 1)
 
     def stop(self):
         self.dowloading = False
 
-    def button_on_press(self, instance):
-        video_url = self.url.text
-        if not video_url:
-            return
+    def download(self, video_url):
         self.downloading = True
         subprocess.run(["yt-dlp", "-f", "best", "-P", ".", video_url], check=True)
         results = re.findall(r".*v=(.*)", video_url)
@@ -72,10 +68,17 @@ class DownloadWindow(GridLayout):
                 subprocess.run(["ffmpeg", "-y", "-i", filename, "-ab", "320k", out_filename + ".mp3"], check = True)
                 break
 
-        self.stop()
         print("Finished")
         self.downloading = False
+        self.progressbar.value = 100
 
+
+    def button_on_press(self, instance):
+        video_url = self.url.text
+        if not video_url:
+            return
+        self.progressbar.value = 0
+        Thread(target=self.download, args=(video_url,)).start()
 
 def find(pattern, path):
     result = []
