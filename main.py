@@ -1,4 +1,6 @@
 from threading import Thread
+import pathlib
+from pathlib import Path
 from subprocess import Popen
 import re
 import os, fnmatch
@@ -53,19 +55,21 @@ class DownloadWindow(GridLayout):
     def stop(self):
         self.dowloading = False
 
+
     def download(self, video_url):
         self.downloading = True
-        subprocess.run(["yt-dlp", "-f", "best", "-P", ".", video_url], check=True)
+        home_directory = os.path.expanduser( '~' )
+        download_dir = home_directory +  "/Downloads/music"
+        Path(download_dir).mkdir(parents=True, exist_ok=True)
+        subprocess.run(["yt-dlp", "-f", "best", "-P", download_dir, video_url], check=True)
         results = re.findall(r".*v=(.*)", video_url)
         pattern = results[0]
-        ff = find("*" + pattern + "*", ".")
-        print(ff)
+        ff = find("*" + pattern + "*", download_dir)
         for filename in ff:
-            if filename.startswith(".") and not filename.endswith("mp3"):
-                filename = filename[2:]
-                print(filename)
+            if not filename.endswith("mp3"):
                 out_filename, _ = os.path.splitext(filename)
                 subprocess.run(["ffmpeg", "-y", "-i", filename, "-ab", "320k", out_filename + ".mp3"], check = True)
+                os.remove(filename)
                 break
 
         print("Finished")
@@ -83,6 +87,8 @@ class DownloadWindow(GridLayout):
 def find(pattern, path):
     result = []
     for root, dirs, files in os.walk(path):
+        print(path)
+        print(files)
         for name in files:
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name))
