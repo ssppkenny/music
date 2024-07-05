@@ -1,8 +1,10 @@
+from subprocess import Popen
 import re
 import os, fnmatch
 import subprocess
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.uix.progressbar import ProgressBar
+
 # base Class of your App inherits from the App class.
 from kivy.core.window import Window
 from kivy.app import App
@@ -32,8 +34,10 @@ class DownloadWindow(GridLayout):
         self.button.bind(on_press=self.button_on_press)
         self.add_widget(self.button)
         self.progressbar = ProgressBar(max=100)
+        self.progressbar.value = 0
         self.add_widget(self.progressbar)
 
+    @mainthread
     def update(self):
         print("update")
         pb = self.progresspar
@@ -41,30 +45,31 @@ class DownloadWindow(GridLayout):
         if val > 99:
             pb.value = 0
         else:
-            pb.value += 1
+            pb.value += 10
+        event = Clock.schedule_once(self.update, 1)
 
     def stop(self):
         Clock.unschedule(self.update)
 
-
     def button_on_press(self, instance):
-        video_url = self.url.text 
-        event = Clock.schedule_interval(self.update, .1)
-        print(event)
-        print(video_url)
-        subprocess.run(['yt-dlp', '-f', 'best', '-P', ".", video_url], check=True)
+        video_url = self.url.text
+        if not video_url:
+            return
+        event = Clock.schedule_once(self.update, 1)
+        subprocess.run(["yt-dlp", "-f", "best", "-P", ".", video_url], check=True)
         results = re.findall(r".*v=(.*)", video_url)
         pattern = results[0]
         ff = find("*" + pattern + "*", ".")
-        if ff:
-            filename = str(ff[0])
-            if filename.startswith("."):
+        for filename in ff:
+            if filename.startswith(".") and not filename.endswith("mp3"):
                 filename = filename[2:]
-
-            print(filename)
-            subprocess.run(['ffmpeg', '-i', filename, '-ab', '320k', filename+'.mp3'])
+                print(filename)
+                out_filename, _ = os.path.splitext(filename)
+                subprocess.run(["ffmpeg", "-y", "-i", filename, "-ab", "320k", out_filename + ".mp3"], check = True)
+                break
 
         self.stop()
+
 
 def find(pattern, path):
     result = []
@@ -73,6 +78,7 @@ def find(pattern, path):
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name))
     return result
+
 
 # the Base Class of our Kivy App
 class MyApp(App):
