@@ -36,26 +36,29 @@ class DownloadWindow(GridLayout):
         self.progressbar = ProgressBar(max=100)
         self.progressbar.value = 0
         self.add_widget(self.progressbar)
+        self.timer = Clock.schedule_interval(self.update, 1)
+        self.downloading = False
 
     @mainthread
-    def update(self):
-        print("update")
-        pb = self.progresspar
-        val = pb.value
-        if val > 99:
-            pb.value = 0
-        else:
-            pb.value += 10
-        event = Clock.schedule_once(self.update, 1)
+    def update(self,value):
+        if self.downloading:
+            print("update")
+            pb = self.progressbar
+            val = pb.value
+            if val > 99:
+                pb.value = 0
+            else:
+                pb.value += 10
+            self.timer = Clock.schedule_once(self.update, 1)
 
     def stop(self):
-        Clock.unschedule(self.update)
+        self.dowloading = False
 
     def button_on_press(self, instance):
         video_url = self.url.text
         if not video_url:
             return
-        event = Clock.schedule_once(self.update, 1)
+        self.downloading = True
         subprocess.run(["yt-dlp", "-f", "best", "-P", ".", video_url], check=True)
         results = re.findall(r".*v=(.*)", video_url)
         pattern = results[0]
@@ -71,6 +74,7 @@ class DownloadWindow(GridLayout):
 
         self.stop()
         print("Finished")
+        self.downloading = False
 
 
 def find(pattern, path):
