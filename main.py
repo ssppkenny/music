@@ -60,6 +60,7 @@ class DownloadWindow(GridLayout):
         results = re.findall(r".*v=(.*)", video_url)
         pattern = results[0]
         ff = find("*" + pattern + "*", ".")
+        print(ff)
         for filename in ff:
             if filename.startswith(".") and not filename.endswith("mp3"):
                 filename = filename[2:]
@@ -69,6 +70,7 @@ class DownloadWindow(GridLayout):
                 break
 
         self.stop()
+        print("Finished")
 
 
 def find(pattern, path):
