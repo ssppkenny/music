@@ -1,0 +1,15 @@
+[project]
+name = "music"
+version = "0.1.0"
+description = "Add a short description here"
+authors = ["Sergey Mikhno <sergey.mikhno@gmail.com>"]
+channels = ["conda-forge"]
+platforms = ["osx-64"]
+
+[tasks]
+
+[dependencies]
+python = "3.11.*"
+yt-dlp = ">=2024.7.2,<2024.8"
+kivy = ">=2.3.0,<2.4"
+black = ">=24.4.2,<24.5"
